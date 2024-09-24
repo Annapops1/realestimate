@@ -46,12 +46,11 @@ if (isset($_GET['property_id'])) {
 
 // Check if the form was submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $title = $_POST['title'];
+    
     $place = $_POST['place'];
-    $district = $_POST['district'];
     $state = $_POST['state'];
     $size = $_POST['size'];
-    $description = $_POST['description'];
+  
 
     // Handle file upload if a new file is uploaded
     if (!empty($_FILES['photo']['name'])) {
@@ -70,7 +69,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // Prepare the SQL statement
-    $sql = "UPDATE properties SET title = ?, place = ?, district = ?, state = ?, size = ?, description = ?, photo = ? WHERE property_id = ? AND user_id = ?";
+    $sql = "UPDATE properties SET  place = ?, state = ?, size = ?, photo = ? WHERE property_id = ? AND user_id = ?";
 
     $stmt = $conn->prepare($sql);
 
@@ -79,7 +78,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // Bind parameters
-    $stmt->bind_param("ssssissii", $title, $place, $district, $state, $size, $description, $photo, $property_id, $user_id);
+    $stmt->bind_param("ssisii",  $place,  $state, $size, $photo, $property_id, $user_id);
 
     // Execute the statement
     if ($stmt->execute()) {
@@ -311,24 +310,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <div class="upload-container">
         <h1>Edit Property</h1>
         <form action="edit_property.php?property_id=<?php echo $property_id; ?>" method="post" enctype="multipart/form-data">
-            <label for="title">Title:</label>
-            <input type="text" id="title" name="title" value="<?php echo htmlspecialchars($property['title']); ?>" required>
 
             <label for="place">Place:</label>
             <input type="text" id="place" name="place" value="<?php echo htmlspecialchars($property['place']); ?>" required>
 
-            <label for="district">District:</label>
-            <input type="text" id="district" name="district" value="<?php echo htmlspecialchars($property['district']); ?>" required>
-
             <label for="state">State:</label>
             <input type="text" id="state" name="state" value="<?php echo htmlspecialchars($property['state']); ?>" required>
 
-            <label for="size">Size (in cents):</label>
-            <input type="text" id="size" name="size" value="<?php echo htmlspecialchars($property['size']); ?>" required>
-
-            <label for="description">Description:</label>
-            <textarea id="description" name="description" required><?php echo htmlspecialchars($property['description']); ?></textarea>
-
+            
             <label for="photo">Photo:</label>
             <input type="file" id="photo" name="photo" accept="image/*">
 

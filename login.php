@@ -1,5 +1,7 @@
 <?php
 session_start();
+error_reporting(E_ERROR | E_PARSE);
+
 
 // Database connection
 $host = '127.0.0.1'; // Database host
@@ -19,7 +21,7 @@ $message = '';
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = trim($_POST['username']);
     $password = trim($_POST['password']);
-    
+
     // Check if fields are empty
     if (empty($username) || empty($password)) {
         $message = "All fields are required.";
@@ -31,14 +33,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             header("Location:admin_dash.php");
             exit();
         }
-        
+
         // User credentials check
         $sql = "SELECT user_id, username, password FROM users WHERE username = ?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("s", $username);
         $stmt->execute();
         $stmt->store_result();
-        
+
         if ($stmt->num_rows > 0) {
             $stmt->bind_result($user_id, $username, $hashed_password);
             $stmt->fetch();
@@ -54,7 +56,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         } else {
             $message = "No account found with that username.";
         }
-        
+
         $stmt->close();
     }
 }
@@ -64,6 +66,7 @@ $conn->close();
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -78,6 +81,7 @@ $conn->close();
             height: 100vh;
             margin: 0;
         }
+
         .container {
             background-color: white;
             padding: 40px;
@@ -86,31 +90,37 @@ $conn->close();
             max-width: 400px;
             width: 100%;
         }
+
         h1 {
             margin-bottom: 20px;
             font-size: 24px;
             text-align: center;
             color: #333;
         }
+
         .form-group {
             margin-bottom: 15px;
         }
+
         .form-group label {
             display: block;
             margin-bottom: 5px;
             color: #555;
         }
+
         .form-group input {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 5px;
         }
+
         .form-group .error {
             color: red;
             font-size: 12px;
             margin-top: 5px;
         }
+
         .btn {
             background-color: #4facfe;
             color: white;
@@ -120,22 +130,27 @@ $conn->close();
             cursor: pointer;
             width: 100%;
         }
+
         .btn:hover {
             background-color: #00f2fe;
         }
+
         .form-footer {
             text-align: center;
             margin-top: 20px;
         }
+
         .form-footer a {
             color: #4facfe;
             text-decoration: none;
         }
+
         .form-footer a:hover {
             text-decoration: underline;
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>Login</h1>
@@ -170,4 +185,5 @@ $conn->close();
         }
     </script>
 </body>
+
 </html>

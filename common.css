@@ -1,0 +1,144 @@
+/* Main Header Area */
+.main-header-area {
+    position: sticky;
+    top: 0;
+    width: 100%;
+    z-index: 100;
+    background-color: #333;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.classy-navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 30px;
+}
+
+.nav-brand img {
+    width: 150px;
+}
+
+.classy-navbar-toggler {
+    display: none;
+    cursor: pointer;
+}
+
+.classy-navbar-toggler .navbarToggler {
+    width: 30px;
+    height: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.classy-navbar-toggler .navbarToggler span {
+    height: 3px;
+    background-color: #fff;
+}
+
+.classy-menu {
+    display: flex;
+    align-items: center;
+}
+
+.classy-menu .classycloseIcon {
+    display: none;
+}
+
+.classynav {
+    display: flex;
+    align-items: center;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.classynav li {
+    margin-left: 20px;
+    display: inline-block;
+}
+
+.classynav li:first-child {
+    margin-left: 0;
+}
+
+.classynav li a {
+    text-transform: uppercase;
+    font-weight: 600;
+    color: #fff;
+    text-decoration: none;
+    padding: 10px 15px;
+    transition: color 0.3s, background-color 0.3s;
+    border-radius: 5px;
+}
+
+.classynav li a:hover {
+    background-color: #ff4a17;
+    color: #fff;
+}
+
+@media (max-width: 992px) {
+    .classy-navbar-toggler {
+        display: block;
+    }
+
+    .classy-menu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        background-color: #333;
+        flex-direction: column;
+        align-items: flex-start;
+        display: none;
+        padding: 15px;
+    }
+
+    .classy-menu.active {
+        display: flex;
+    }
+
+    .classynav {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .classynav li {
+        width: 100%;
+        margin: 10px 0;
+    }
+
+    .classy-navbar-toggler .navbarToggler span {
+        background-color: #ff4a17;
+    }
+
+    .classycloseIcon {
+        display: block;
+        cursor: pointer;
+    }
+
+    .classycloseIcon .cross-wrap {
+        width: 25px;
+        height: 25px;
+        position: relative;
+    }
+
+    .classycloseIcon .cross-wrap span {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background-color: #fff;
+        transform: translateY(-50%);
+    }
+
+    .classycloseIcon .cross-wrap span.top {
+        transform: rotate(45deg);
+    }
+
+    .classycloseIcon .cross-wrap span.bottom {
+        transform: rotate(-45deg);
+    }
+}

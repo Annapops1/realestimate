@@ -41,9 +41,9 @@
 
             if ($result->num_rows > 0) {
                 echo "<table>";
-                echo "<tr><th>ID</th><th>Address</th><th>City</th><th>State</th><th>Cent</th></tr>";
+                echo "<tr><th>ID</th><th>Address</th><th>City</th><th>State</th><th>Size(in cent)</th></tr>";
                 while($row = $result->fetch_assoc()) {
-                    echo "<tr><td>" . $row["property_id"]. "</td><td>" . $row["address"]. "</td><td>" . $row["city"]. "</td><td>" . $row["state"]. "</td><td>" . $row["cent"].  "</td></tr>";
+                    echo "<tr><td>" . $row["property_id"]. "</td><td>" . $row["address"]. "</td><td>" . $row["city"]. "</td><td>" . $row["state"]. "</td><td>" . $row["size"]. "</td><td>" . "</td></tr>";
                 }
                 echo "</table>";
             } else {

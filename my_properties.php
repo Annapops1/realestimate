@@ -22,7 +22,7 @@ if ($conn->connect_error) {
 }
 
 // Fetch properties uploaded by the logged-in user
-$sql = "SELECT property_id, title, place, district, state, size FROM properties WHERE user_id = ?";
+$sql = "SELECT property_id,  place, state FROM properties WHERE user_id = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
@@ -38,8 +38,7 @@ $conn->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Properties - RealEstiMate</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="common.css">
 
 
     <style>
@@ -110,16 +109,7 @@ $conn->close();
         <!-- Top Header Area -->
         <div class="top-header-area">
             <div class="h-100 d-md-flex justify-content-between align-items-center">
-                <div class="email-address">
-                    <a href="mailto:contact@southtemplate.com">contact@southtemplate.com</a>
-                </div>
-                <div class="phone-number d-flex">
-                    <div class="icon">
-                        <img src="img/icons/phone-call.png" alt="">
-                    </div>
-                    <div class="number">
-                        <a href="tel:+45 677 8993000 223">+45 677 8993000 223</a>
-                    </div>
+                
                 </div>
             </div>
         </div>
@@ -131,7 +121,7 @@ $conn->close();
                 <nav class="classy-navbar justify-content-between" id="southNav">
 
                     <!-- Logo -->
-                    <a class="nav-brand" href="index.html"><img src="img/core-img/logo.png" alt=""></a>
+                    <a class="nav-brand" href="index.html">
 
                     <!-- Navbar Toggler -->
                     <div class="classy-navbar-toggler">
@@ -179,14 +169,13 @@ $conn->close();
             <?php while ($row = $result->fetch_assoc()): ?>
                 <li>
                     <div class="property-info">
-                        <h2><?php echo htmlspecialchars($row['title']); ?></h2>
-                        <p>Location: <?php echo htmlspecialchars($row['place'] . ', ' . $row['district'] . ', ' . $row['state']); ?></p>
-                        <p>Size: <?php echo htmlspecialchars($row['size']); ?> cents</p>
+
+                    <p>Location: <?php echo htmlspecialchars($row['place'] . ', ' . $row['state']); ?></p>
                     </div>
                     <div class="property-actions">
                         <a href="property_details.php?property_id=<?php echo $row['property_id']; ?>">View</a>
                         <a href="edit_property.php?property_id=<?php echo $row['property_id']; ?>">Edit</a>
-                        <a href="delete_property.php?property_id=<?php echo $row['property_id']; ?>" class="delete-btn" onclick="return confirm('Are you sure you want to delete this property?');">Delete</a>
+                        <!-- <a href="delete_property.php?property_id=<?php echo $row['property_id']; ?>" class="delete-btn" onclick="return confirm('Are you sure you want to delete this property?');">Delete</a> -->
                     </div>
                 </li>
             <?php endwhile; ?>

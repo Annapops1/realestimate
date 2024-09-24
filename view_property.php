@@ -14,7 +14,7 @@ if ($conn->connect_error) {
 }
 
 // Fetch all properties
-$sql = "SELECT property_id, title, place, district, state, size, photo FROM properties";
+$sql = "SELECT property_id, title,place, district, state, size, photo FROM properties";
 $result = $conn->query($sql);
 
 $conn->close();
@@ -27,95 +27,82 @@ $conn->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Properties - RealEstiMate</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="common.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
+        /* Reset some basic elements for better consistency across browsers */
+        body, h1, h2, p, a {
             margin: 0;
             padding: 0;
-        }
-
-        .properties-container {
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            padding: 30px;
-            max-width: 800px;
-            width: 100%;
-            margin: 5% auto;
             box-sizing: border-box;
         }
 
-        .properties-container img {
-            width: 100%;
-            height: auto;
+        /* Set the background color and font style for the body */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Navigation Bar */
+        .navbar {
+            overflow: hidden;
+            background-color: #333;
+            display: flex;
+            justify-content: center;
+            padding: 10px 0;
+        }
+
+        .navbar a {
+            float: left;
+            display: block;
+            color: #f2f2f2;
+            text-align: center;
+            padding: 14px 20px;
+            text-decoration: none;
+            font-size: 17px;
+            margin: 0 10px;
+        }
+
+        .navbar a:hover {
+            background-color: #ddd;
+            color: black;
+        }
+
+        .navbar a.active {
+            background-color: #04AA6D;
+            color: white;
+        }
+
+        /* Header area styles */
+        .header-area {
+            background-color: #35424a;
+            color: #fff;
+            padding: 20px 0;
+            text-align: center;
+        }
+
+        .header-area h1 {
+            margin: 0;
+            font-size: 36px;
+            font-weight: normal;
+        }
+
+        /* Properties Container */
+        .properties-container {
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 30px;
+            background-color: #fff;
             border-radius: 10px;
-            object-fit: cover;
-            margin-bottom: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
 
         .properties-container h1 {
             margin-bottom: 20px;
-            font-size: 32px;
-            color: #333;
+            font-size: 24px;
             text-align: center;
-        }
-
-        .property-info {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-
-        .property-info p {
-            font-size: 18px;
-            color: #666;
-            flex: 1 1 45%;
-            margin: 10px 0;
-        }
-
-        .description {
-            margin-top: 30px;
-            font-size: 16px;
-            color: #444;
-            line-height: 1.6;
-        }
-
-        .description p {
-            margin: 0;
-        }
-
-        /* Header styles */
-        .header-area {
-            width: 100%;
-            position: relative;
-            z-index: 10;
-        }
-
-        .top-header-area {
-            background-color: black;
-            padding: 10px 0;
-            border-bottom: 1px solid #ddd;
-        }
-
-        .top-header-area .email-address a,
-        .top-header-area .phone-number a {
-            color: #fff;
-            font-size: 14px;
-            text-decoration: none;
-        }
-
-
-        .properties-container {
-            background-color: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-            padding: 30px;
-            max-width: 1000px;
-            width: 100%;
+            color: #333;
         }
 
         .property-item {
@@ -123,7 +110,7 @@ $conn->close();
             align-items: center;
             margin-bottom: 20px;
             border-bottom: 1px solid #ddd;
-            padding-bottom: 10px;
+            padding-bottom: 20px;
         }
 
         .property-item img {
@@ -131,12 +118,13 @@ $conn->close();
             height: 100px;
             border-radius: 10px;
             margin-right: 20px;
+            object-fit: cover;
         }
 
         .property-item h2 {
-            margin: 0;
+            margin: 0 0 10px 0;
             font-size: 20px;
-            color: #0066cc;
+            color: #2980b9;
         }
 
         .property-item p {
@@ -146,82 +134,57 @@ $conn->close();
         }
 
         .property-item a {
+            display: inline-block;
             text-decoration: none;
-            background-color: #0066cc;
+            background-color: #2980b9;
             color: #fff;
             padding: 8px 15px;
             border-radius: 5px;
             transition: background-color 0.3s;
             font-size: 14px;
+            margin-top: 10px;
         }
 
         .property-item a:hover {
-            background-color: #005bb5;
+            background-color: #3498db;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .property-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .property-item img {
+                width: 100%;
+                height: auto;
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
         }
     </style>
 </head>
 
 <body>
-    <!-- Preloader -->
-    <div id="preloader">
-        <div class="south-load"></div>
+    <!-- Navigation Bar -->
+    <div class="navbar">
+        <a href="index1.php">Home</a>
+        <a href="my_properties.php">My Properties</a>
+        <a href="upload_property.php">Upload Property</a>
+        <a href="search_properties.php">Search Properties</a>
+        <a href="view_property.php">View Property</a>
+        <a href="profile.php">My Profile</a>
+        <a href="logout.php">Logout</a>
+        <a href="contact.html">Contact</a>
     </div>
-    <header class="header-area">
-        <!-- Top Header Area -->
-        <div class="top-header-area">
-            <div class="h-100 d-md-flex justify-content-between align-items-center">
-                <div class="email-address">
-                    <a href="mailto:contact@southtemplate.com">contact@southtemplate.com</a>
-                </div>
-                <div class="phone-number d-flex">
-                    <div class="icon">
-                        <img src="img/icons/phone-call.png" alt="">
-                    </div>
-                    <div class="number">
-                        <a href="tel:+45 677 8993000 223">+45 677 8993000 223</a>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Main Header Area -->
-        <div class="main-header-area" id="stickyHeader">
-            <div class="classy-nav-container breakpoint-off">
-                <!-- Classy Menu -->
-                <nav class="classy-navbar justify-content-between" id="southNav">
-                    <!-- Logo -->
-                    <a class="nav-brand" href="index.html"><img src="img/core-img/logo.png" alt=""></a>
+    <!-- Property View Heading -->
+    <div class="header-area">
+        <h1>Property View</h1>
+    </div>
 
-                    <!-- Navbar Toggler -->
-                    <div class="classy-navbar-toggler">
-                        <span class="navbarToggler"><span></span><span></span><span></span></span>
-                    </div>
-
-                    <!-- Menu -->
-                    <div class="classy-menu">
-                        <!-- close btn -->
-                        <div class="classycloseIcon">
-                            <div class="cross-wrap"><span class="top"></span><span class="bottom"></span></div>
-                        </div>
-
-                        <!-- Nav Start -->
-                        <div class="classynav">
-                            <ul>
-                                <li><a href="index1.php">Home</a></li>
-                                <li><a href="my_properties.php">My Properties</a></li>
-                                <li><a href="upload_property.php">Upload Property</a></li>
-                                <li><a href="search_properties.php">Search Properties</a></li>
-                                <li><a href="view_property.php">View Property</a></li>
-                                <li><a href="profile.php">My Profile</a></li>
-                                <li><a href="logout.php">Logout</a></li>
-                                <li><a href="contact.html">Contact</a></li>
-                            </ul>
-                            <!-- Nav End -->
-                        </div>
-                </nav>
-            </div>
-        </div>
-    </header>
+    <!-- Properties Container -->
     <div class="properties-container">
         <h1>Properties Available</h1>
         <?php if ($result && $result->num_rows > 0): ?>
@@ -246,14 +209,6 @@ $conn->close();
             <p>No properties available.</p>
         <?php endif; ?>
     </div>
-
 </body>
-<script src="js/jquery/jquery-2.2.4.min.js"></script>
-<script src="js/popper.min.js"></script>
-<script src="js/bootstrap.min.js"></script>
-<script src="js/plugins.js"></script>
-<script src="js/classy-nav.min.js"></script>
-<script src="js/jquery-ui.min.js"></script>
-<script src="js/active.js"></script>
 
 </html>

@@ -21,16 +21,29 @@ if ($conn->connect_error) {
 }
 
 // Fetch property details
-$sql = "SELECT title, place, district, state, size, description, photo FROM properties WHERE property_id = ?";
+$sql = "SELECT place, district, state, size, price, photo, user_id FROM properties WHERE property_id = ?";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     die("Prepare failed: " . $conn->error);
 }
 $stmt->bind_param("i", $property_id);
 $stmt->execute();
-$stmt->bind_result($title, $place, $district, $state, $size, $description, $photo);
+$stmt->bind_result($place, $district, $state, $size, $price, $photo, $user_id);
 $stmt->fetch();
 $stmt->close();
+
+// Fetch author details
+$sql = "SELECT username, email, phone FROM users WHERE user_id = ?";
+$stmt = $conn->prepare($sql);
+if (!$stmt) {
+    die("Prepare failed: " . $conn->error);
+}
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$stmt->bind_result($author_name, $author_email, $author_phone);
+$stmt->fetch();
+$stmt->close();
+
 $conn->close();
 ?>
 
@@ -43,6 +56,8 @@ $conn->close();
     <title><?php echo htmlspecialchars($title); ?> - Property Details</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="common.css">
+    
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -50,6 +65,156 @@ $conn->close();
             margin: 0;
             padding: 0;
         }
+
+
+
+
+
+/* Main Header Area */
+.main-header-area {
+    position: sticky;
+    top: 0;
+    width: 100%;
+    z-index: 100;
+    background-color: #333;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.classy-navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 30px;
+}
+
+.nav-brand img {
+    width: 150px;
+}
+
+.classy-navbar-toggler {
+    display: none;
+    cursor: pointer;
+}
+
+.classy-navbar-toggler .navbarToggler {
+    width: 30px;
+    height: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.classy-navbar-toggler .navbarToggler span {
+    height: 3px;
+    background-color: #fff;
+}
+
+.classy-menu {
+    display: flex;
+    align-items: center;
+}
+
+.classy-menu .classycloseIcon {
+    display: none;
+}
+
+.classynav {
+    display: flex;
+    align-items: center;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.classynav li {
+    margin-left: 20px;
+    display: inline-block;
+}
+
+.classynav li:first-child {
+    margin-left: 0;
+}
+
+.classynav li a {
+    text-transform: uppercase;
+    font-weight: 600;
+    color: #fff;
+    text-decoration: none;
+    padding: 10px 15px;
+    transition: color 0.3s, background-color 0.3s;
+    border-radius: 5px;
+}
+
+.classynav li a:hover {
+    background-color: #ff4a17;
+    color: #fff;
+}
+
+@media (max-width: 992px) {
+    .classy-navbar-toggler {
+        display: block;
+    }
+
+    .classy-menu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        background-color: #333;
+        flex-direction: column;
+        align-items: flex-start;
+        display: none;
+        padding: 15px;
+    }
+
+    .classy-menu.active {
+        display: flex;
+    }
+
+    .classynav {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .classynav li {
+        width: 100%;
+        margin: 10px 0;
+    }
+
+    .classy-navbar-toggler .navbarToggler span {
+        background-color: #ff4a17;
+    }
+
+    .classycloseIcon {
+        display: block;
+        cursor: pointer;
+    }
+
+    .classycloseIcon .cross-wrap {
+        width: 25px;
+        height: 25px;
+        position: relative;
+    }
+
+    .classycloseIcon .cross-wrap span {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background-color: #fff;
+        transform: translateY(-50%);
+    }
+
+    .classycloseIcon .cross-wrap span.top {
+        transform: rotate(45deg);
+    }
+
+    .classycloseIcon .cross-wrap span.bottom {
+        transform: rotate(-45deg);
+    }
+}
+
 
         .properties-container {
             background-color: #fff;
@@ -137,29 +302,14 @@ $conn->close();
     </div>
     <header class="header-area">
         <!-- Top Header Area -->
-        <div class="top-header-area">
-            <div class="h-100 d-md-flex justify-content-between align-items-center">
-                <div class="email-address">
-                    <a href="mailto:contact@southtemplate.com">contact@southtemplate.com</a>
-                </div>
-                <div class="phone-number d-flex">
-                    <div class="icon">
-                        <img src="img/icons/phone-call.png" alt="">
-                    </div>
-                    <div class="number">
-                        <a href="tel:+45 677 8993000 223">+45 677 8993000 223</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
+        
+        
         <!-- Main Header Area -->
         <div class="main-header-area" id="stickyHeader">
             <div class="classy-nav-container breakpoint-off">
                 <!-- Classy Menu -->
-                <nav class="classy-navbar justify-content-between" id="southNav">
-                    <!-- Logo -->
-                    <a class="nav-brand" href="index.html"><img src="img/core-img/logo.png" alt=""></a>
+                
+                    <a class="nav-brand" href="index.html">
 
                     <!-- Navbar Toggler -->
                     <div class="classy-navbar-toggler">
@@ -198,16 +348,34 @@ $conn->close();
         <?php else: ?>
             <img src="default-property.png" alt="Default Property Image">
         <?php endif; ?>
-        <h1><?php echo htmlspecialchars($title); ?></h1>
         <div class="property-info">
             <p><strong>Place:</strong> <?php echo htmlspecialchars($place); ?></p>
             <p><strong>District:</strong> <?php echo htmlspecialchars($district); ?></p>
             <p><strong>State:</strong> <?php echo htmlspecialchars($state); ?></p>
             <p><strong>Size:</strong> <?php echo htmlspecialchars($size); ?> cent</p>
+            <p><strong>Price:</strong> ₹<?php echo number_format(htmlspecialchars($price), 2); ?></p>
         </div>
-        <div class="description">
-            <p><strong>Description:</strong></p>
-            <p><?php echo nl2br(htmlspecialchars($description)); ?></p>
+    </div>
+
+    <div class="container mt-5">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h2 class="mb-0">Author Details</h2>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <p><strong>Name:</strong></p>
+                        <p><strong>Email:</strong></p>
+                        <p><strong>Phone:</strong></p>
+                    </div>
+                    <div class="col-md-8">
+                        <p><?php echo htmlspecialchars($author_name); ?></p>
+                        <p><?php echo htmlspecialchars($author_email); ?></p>
+                        <p><?php echo htmlspecialchars($author_phone); ?></p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </body>

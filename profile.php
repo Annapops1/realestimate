@@ -41,8 +41,7 @@ $conn->close();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="common.css">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -181,6 +180,19 @@ $conn->close();
             font-size: 18px;
             color: #333;
         }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+        }
+
+        .alert-danger {
+            color: #a94442;
+            background-color: #f2dede;
+            border-color: #ebccd1;
+        }
     </style>
 </head>
 
@@ -193,17 +205,7 @@ $conn->close();
         <!-- Top Header Area -->
         <div class="top-header-area">
             <div class="h-100 d-md-flex justify-content-between align-items-center">
-                <div class="email-address">
-                    <a href="mailto:contact@southtemplate.com">contact@southtemplate.com</a>
-                </div>
-                <div class="phone-number d-flex">
-                    <div class="icon">
-                        <img src="img/icons/phone-call.png" alt="">
-                    </div>
-                    <div class="number">
-                        <a href="tel:+45 677 8993000 223">+45 677 8993000 223</a>
-                    </div>
-                </div>
+
             </div>
         </div>
 
@@ -213,7 +215,7 @@ $conn->close();
                 <!-- Classy Menu -->
                 <nav class="classy-navbar justify-content-between" id="southNav">
                     <!-- Logo -->
-                    <a class="nav-brand" href="index.html"><img src="img/core-img/logo.png" alt=""></a>
+                    <a class="nav-brand" href="index.html">
 
                     <!-- Navbar Toggler -->
                     <div class="classy-navbar-toggler">
@@ -244,24 +246,75 @@ $conn->close();
                 </nav>
             </div>
         </div>
+        <?php
+require 'vendor/autoload.php';
+
+// Razorpay API Key
+$apiKey = 'rzp_test_UY1y7bu0apmIK4'; // Replace with your Key ID
+
+// Create order
+$orderData = [
+    'receipt' => 'rcptid_11',
+    'amount' => 99900, // Amount in paise
+    'currency' => 'INR',
+    'payment_capture' => 1, // Auto capture
+];
+
+// Move order creation to a separate backend file
+$orderId = createRazorpayOrder($orderData);
+
+function createRazorpayOrder($orderData)
+{
+    return 'order_placeholder_id';
+}
+
+// Check for payment failure message
+$paymentFailureMessage = isset($_SESSION['payment_failure']) ? $_SESSION['payment_failure'] : '';
+unset($_SESSION['payment_failure']); // Clear the message after retrieving it
+?>
+
     </header>
     <center>
-        <div class="profile-container">
-            <?php if ($photo): ?>
-                <img src="uploads/<?php echo htmlspecialchars($photo); ?>" alt="Profile Photo">
-            <?php else: ?>
-                <img src="default-avatar.png" alt="Default Avatar">
-            <?php endif; ?>
-            <h1><?php echo htmlspecialchars($username); ?></h1>
-
-            <div class="profile-details">
-                <p><strong>Email:</strong> <?php echo htmlspecialchars($email); ?></p>
-                <p><strong>Phone:</strong> <?php echo htmlspecialchars($phone); ?></p>
-                <p><strong>Address:</strong> <?php echo htmlspecialchars($address); ?></p>
+    <div class="profile-container">
+        <?php if (!empty($paymentFailureMessage)): ?>
+            <div class="alert alert-danger" role="alert">
+                <?php echo htmlspecialchars($paymentFailureMessage); ?>
             </div>
+        <?php endif;?>
 
-            <a href="edit_profile.php">Edit Profile</a>
+        <?php if ($photo): ?>
+            <img src="uploads/<?php echo htmlspecialchars($photo); ?>" alt="Profile Photo">
+        <?php else: ?>
+            <img src="default-avatar.png" alt="Default Avatar">
+        <?php endif;?>
+        <h1><?php echo htmlspecialchars($username); ?></h1>
+
+        <div class="profile-details">
+            <p><strong>Email:</strong> <?php echo htmlspecialchars($email); ?></p>
+            <p><strong>Phone:</strong> <?php echo htmlspecialchars($phone); ?></p>
+            <p><strong>Address:</strong> <?php echo htmlspecialchars($address); ?></p>
         </div>
+
+        <a href="edit_profile.php">Edit Profile</a>
+        <form action="" method="POST">
+<script
+    src="https://checkout.razorpay.com/v1/checkout.js"
+    data-key="<?php echo $apiKey; ?>"
+    data-amount="99900" 
+    data-currency="INR"
+    data-id="<?php echo 'OID' . rand(10, 100) . 'END'; ?>"
+    data-buttontext="Premium Subscription"
+    data-name="Atharv Organics"
+
+    data-image="logo.png"
+    data-prefill.name="name"
+    data-prefill.email="email"
+    data-prefill.address="address"
+    data-theme.color="#F37254"
+></script>
+<input type="hidden" custom="Hidden Element" name="hidden">
+</form>
+    </div>
     </center>
 </body>
 <script src="js/jquery/jquery-2.2.4.min.js"></script>

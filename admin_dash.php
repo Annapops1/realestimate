@@ -1,5 +1,12 @@
+<?php
+session_start();
+error_reporting(E_ERROR | E_PARSE);
+
+
+?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -27,7 +34,6 @@
         .container {
             display: flex;
             width: 100%;
-            max-width: 1200px;
             background: #ffffff;
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
             border-radius: 10px;
@@ -100,11 +106,14 @@
             margin-bottom: 20px;
         }
 
-        table, th, td {
+        table,
+        th,
+        td {
             border: 1px solid #e0e0e0;
         }
 
-        th, td {
+        th,
+        td {
             padding: 15px;
             text-align: left;
         }
@@ -114,6 +123,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="sidebar">
@@ -124,7 +134,7 @@
                 <li><a href="#" id="propertiesLink">Properties</a></li>
                 <li><a href="#" id="inquiriesLink">Inquiries</a></li>
                 <li><a href="#" id="financeLink">Finance</a></li>
-                <li><a href="index.php">Logout</a></li>
+                <li><a href="./logout.php">Logout</a></li>
             </ul>
         </div>
         <div class="main-content">
@@ -139,7 +149,7 @@
                 if ($conn->connect_error) {
                     die("Connection failed: " . $conn->connect_error);
                 }
-                
+
                 // Handle user deletion (soft delete)
                 if (isset($_GET['delete_user_id'])) {
                     $delete_user_id = $_GET['delete_user_id'];
@@ -148,46 +158,79 @@
                     $stmt_delete->bind_param("i", $delete_user_id);
                     $stmt_delete->execute();
                     $stmt_delete->close();
-                }
+                } ?>
+                <script>
+                    $(document).ready(function() {
+                        $('.content-section').hide();
+                        $('#users').show();
+                    });
+                </script>
+                <?php
 
                 // Display active users
-                $sql = "SELECT * FROM users WHERE is_active = 1";
-                $result = $conn->query($sql);
-                if ($result->num_rows > 0) {
-                    echo "<table><tr><th>ID</th><th>Username</th><th>Email</th><th>Phone</th><th>Address</th><th>Action</th></tr>";
-                    while($row = $result->fetch_assoc()) {
-                        echo "<tr><td>" . $row["user_id"]. "</td><td>" . $row["username"]. "</td><td>" . $row["email"]. "</td><td>" . $row["phone"]. "</td><td>" . $row["address"]. "</td>
-                        <td><a href='admin_dash.php?delete_user_id=" . $row["user_id"] . "'>Delete</a></td></tr>";
-                    }
-                    echo "</table>";
-                } else {
-                    echo "No active users found.";
-                }
+                $sql = "SELECT * FROM users";
+$result = $conn->query($sql);
+$i = 0;
+if ($result->num_rows > 0) {
+    echo "<table><tr><th>Sl no:</th><th>Username</th><th>Email</th><th>Phone</th><th>Address</th><th>Profile</th><th>Status</th></tr>";
+    while ($row = $result->fetch_assoc()) {
+        $i = $i + 1;
+        $status = $row["is_active"] ? "Active" : "Inactive";
+        echo "<tr>
+            <td>" . $i . "</td>
+            <td>" . $row["username"] . "</td>
+            <td>" . $row["email"] . "</td>
+            <td>" . $row["phone"] . "</td>
+            <td>" . $row["address"] . "</td>
+            <td><img width='100' height='100' src='./uploads/" . $row["photo"] . "'></td>
+            <td>" . $status . "</td>
+        </tr>";
+    }
+    echo "</table>";
+} else {
+    echo "No users found.";
+}
 
                 $conn->close();
                 ?>
             </div>
             <div id="properties" class="content-section" style="display:none;">
-                <h1>Manage Properties</h1>
-                <?php
-                $conn = new mysqli('127.0.0.1', 'root', '', 'miniproj');
-                if ($conn->connect_error) {
-                    die("Connection failed: " . $conn->connect_error);
-                }
-                $sql = "SELECT * FROM properties";
-                $result = $conn->query($sql);
-                if ($result->num_rows > 0) {
-                    echo "<table><tr><th>ID</th><th>Address</th><th>City</th><th>State</th><th>Cent</th></tr>";
-                    while($row = $result->fetch_assoc()) {
-                        echo "<tr><td>" . $row["property_id"]. "</td><td>" . $row["address"]. "</td><td>" . $row["city"]. "</td><td>" . $row["state"]. "</td><td>" . $row["cent"].  "</td></tr>";
-                    }
-                    echo "</table>";
-                } else {
-                    echo "0 results";
-                }
-                $conn->close();
-                ?>
-            </div>
+    <h1>Manage Properties</h1>
+    <?php
+    $conn = new mysqli('127.0.0.1', 'root', '', 'miniproj');
+    if ($conn->connect_error) {
+        die("Connection failed: " . $conn->connect_error);
+    }
+
+    // Handle property deletion
+    if (isset($_GET['delete_property_id'])) {
+        $delete_property_id = $_GET['delete_property_id'];
+        $sql_delete = "DELETE FROM properties WHERE property_id = ?";
+        $stmt_delete = $conn->prepare($sql_delete);
+        $stmt_delete->bind_param("i", $delete_property_id);
+        $stmt_delete->execute();
+        $stmt_delete->close();
+    }
+
+    $sql = "SELECT * FROM properties";
+    $result = $conn->query($sql);
+    if ($result->num_rows > 0) {
+        echo "<table><tr><th>City</th><th>State</th><th>Size(in cent)</th><th>Image</th><th>Action</th></tr>";
+        while ($row = $result->fetch_assoc()) {
+            echo "<tr><td>"  . $row["place"] . "</td><td>" . $row["state"] . "</td><td>" . $row["size"] . "</td><td><img src='./uploads/" . $row["photo"] . "' width='100'></td>
+            <td>
+                <a href='property_details.php?property_id=" . $row["property_id"] . "'>View</a>
+            </td></tr>";
+        }
+        echo "</table>";
+    } else {
+        echo "No properties found.";
+    }
+
+    $conn->close();
+    ?>
+</div>
+
             <div id="inquiries" class="content-section" style="display:none;">
                 <h1>Manage Inquiries</h1>
                 <?php
@@ -199,8 +242,8 @@
                 $result = $conn->query($sql);
                 if ($result->num_rows > 0) {
                     echo "<table><tr><th>ID</th><th>List ID</th><th>User ID</th><th>Message</th><th>Status</th></tr>";
-                    while($row = $result->fetch_assoc()) {
-                        echo "<tr><td>" . $row["inquiry_id"]. "</td><td>" . $row["list_id"]. "</td><td>" . $row["user_id"]. "</td><td>" . $row["message"]. "</td><td>" . $row["status"]. "</td></tr>";
+                    while ($row = $result->fetch_assoc()) {
+                        echo "<tr><td>" . $row["inquiry_id"] . "</td><td>" . $row["list_id"] . "</td><td>" . $row["user_id"] . "</td><td>" . $row["message"] . "</td><td>" . $row["status"] . "</td></tr>";
                     }
                     echo "</table>";
                 } else {
@@ -220,8 +263,8 @@
                 $result = $conn->query($sql);
                 if ($result->num_rows > 0) {
                     echo "<table><tr><th>ID</th><th>Property ID</th><th>Type</th><th>Amount</th><th>Date</th></tr>";
-                    while($row = $result->fetch_assoc()) {
-                        echo "<tr><td>" . $row["finance_id"]. "</td><td>" . $row["property_id"]. "</td><td>" . $row["type"]. "</td><td>" . $row["amount"]. "</td><td>" . $row["date"]. "</td></tr>";
+                    while ($row = $result->fetch_assoc()) {
+                        echo "<tr><td>" . $row["finance_id"] . "</td><td>" . $row["property_id"] . "</td><td>" . $row["type"] . "</td><td>" . $row["amount"] . "</td><td>" . $row["date"] . "</td></tr>";
                     }
                     echo "</table>";
                 } else {
@@ -257,4 +300,5 @@
         });
     </script>
 </body>
+
 </html>

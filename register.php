@@ -1,4 +1,7 @@
 <?php
+session_start();
+error_reporting(E_ERROR | E_PARSE);
+
 require('config.php'); // Include the database connection
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -14,37 +17,63 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Hash the password for security
     $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
 
-    // Prepare and execute the SQL query
-    $sql = "INSERT INTO users (username, fullname, email, password, phone, address, photo) VALUES (?, ?, ?, ?, ?, ?, ?)";
-    $stmt = $conn->prepare($sql);
+    // Check if username or email already exists
+    $checkSql = "SELECT user_id FROM users WHERE username = ? OR email = ?";
+    $stmt = $conn->prepare($checkSql);
 
     if ($stmt) {
-        $stmt->bind_param("sssssss", $username, $name, $email, $hashedPassword, $phone, $address, $profileImage);
+        $stmt->bind_param("ss", $username, $email);
+        $stmt->execute();
+        $stmt->store_result();
 
-        if ($stmt->execute()) {
-            // Move the uploaded file to the target directory
-            $targetDir = "./assets/img/Upload/";
-            $targetFilePath = $targetDir . $profileImage;
-            move_uploaded_file($_FILES["profile_image"]["tmp_name"], $targetFilePath);
-
-            // Redirect to index.php after successful registration
-            header("Location: index.php");
-            exit();
+        if ($stmt->num_rows > 0) {
+            echo "<script>alert('Username or Email already exists. Please choose a different one.');</script>";
+            $stmt->close();
         } else {
-            echo "Error: " . $stmt->error;
-        }
+            // Prepare and execute the SQL query to insert new user
+            $stmt->close();
 
-        $stmt->close();
+            $sql = "INSERT INTO users (username, fullname, email, password, phone, address, photo) VALUES (?, ?, ?, ?, ?, ?, ?)";
+            $stmt = $conn->prepare($sql);
+
+            if ($stmt) {
+                $stmt->bind_param("sssssss", $username, $name, $email, $hashedPassword, $phone, $address, $profileImage);
+
+                if ($stmt->execute()) {
+                    // Move the uploaded file to the target directory
+                    $targetDir = "uploads/";
+                    $targetFilePath = $targetDir . $profileImage;
+                    move_uploaded_file($_FILES["profile_image"]["tmp_name"], $targetFilePath);
+
+                    // Set session variables
+                    $_SESSION['user_id'] = $stmt->insert_id;
+                    $_SESSION['user_name'] = $username;
+                    $_SESSION['user_photo'] = $targetFilePath;
+
+                    // Redirect to index.php after successful registration
+                    header("Location: index1.php");
+                    exit();
+                } else {
+                    echo "Error: " . $stmt->error;
+                }
+
+                $stmt->close();
+            } else {
+                echo "Error preparing SQL: " . $conn->error;
+            }
+        }
     } else {
-        echo "Error preparing SQL: " . $conn->error;
+        echo "Error checking username/email: " . $conn->error;
     }
 }
 
 $conn->close(); // Close the database connection
 ?>
 
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -57,6 +86,7 @@ $conn->close(); // Close the database connection
             margin: 0;
             padding: 0;
         }
+
         .container {
             max-width: 500px;
             margin: 50px auto;
@@ -65,17 +95,24 @@ $conn->close(); // Close the database connection
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
+
         h2 {
             text-align: center;
             color: #333;
         }
-        input[type="text"], input[type="email"], input[type="password"], input[type="file"], input[type="tel"] {
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="file"],
+        input[type="tel"] {
             width: 100%;
             padding: 10px;
             margin: 10px 0;
             border-radius: 5px;
             border: 1px solid #ccc;
         }
+
         input[type="submit"] {
             width: 100%;
             padding: 10px;
@@ -86,13 +123,16 @@ $conn->close(); // Close the database connection
             font-size: 16px;
             cursor: pointer;
         }
+
         input[type="submit"]:hover {
             background-color: #45a049;
         }
+
         .error {
             color: red;
             font-size: 14px;
         }
+
         .login-link {
             text-align: center;
             margin-top: 20px;
@@ -193,6 +233,7 @@ $conn->close(); // Close the database connection
         });
     </script>
 </head>
+
 <body>
     <div class="container">
         <h2>Register</h2>
@@ -212,4 +253,5 @@ $conn->close(); // Close the database connection
         </div>
     </div>
 </body>
+
 </html>
