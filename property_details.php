@@ -1,15 +1,14 @@
 <?php
 session_start();
 
-// Enable error reporting
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+error_reporting(E_ERROR | E_PARSE);
+
 
 // Check if property_id is passed
 if (!isset($_GET['property_id'])) {
     die("Property ID is not specified.");
 }
-
+$current_user_id=$_SESSION['user_id'];
 $property_id = $_GET['property_id'];
 
 // Connect to the database
@@ -21,30 +20,72 @@ if ($conn->connect_error) {
 }
 
 // Fetch property details
-$sql = "SELECT place, district, state, size, price, photo, user_id FROM properties WHERE property_id = ?";
+$sql = "SELECT place, district, state, size,size_sqft,  price, photo, user_id, property_type FROM properties WHERE property_id = ?";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     die("Prepare failed: " . $conn->error);
 }
 $stmt->bind_param("i", $property_id);
 $stmt->execute();
-$stmt->bind_result($place, $district, $state, $size, $price, $photo, $user_id);
+$stmt->bind_result($place, $district, $state, $size,$size_sqft,  $price, $photo, $user_id, $property_type);
 $stmt->fetch();
 $stmt->close();
 
+// Store property user ID
+$author_id = $user_id; // Store the user ID of the property owner
+
 // Fetch author details
+
+$user_id = isset($user_id) ? $user_id : 0; // Ensure user_id is set
+if ($user_id <= 0) {
+    die("Invalid user ID.");
+}
+
 $sql = "SELECT username, email, phone FROM users WHERE user_id = ?";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
-    die("Prepare failed: " . $conn->error);
+    die("Prepare failed: " . $conn->error . " - SQL: " . $sql); // Added SQL for debugging
 }
+
+// Bind parameters and execute
 $stmt->bind_param("i", $user_id);
-$stmt->execute();
+if (!$stmt->execute()) {
+    die("Execute failed: " . $stmt->error); // Check for execution errors
+}
 $stmt->bind_result($author_name, $author_email, $author_phone);
 $stmt->fetch();
 $stmt->close();
 
-$conn->close();
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['intrestBtn'])) {
+    $user_id = $_POST['user_id'];
+    $property_id = $_POST['property_id'];
+    $owner_id = $_POST['owner_id'];
+    $status = 'interested'; // or whatever status you want to set
+
+    // Check if the interest already exists
+    $checkSql = "SELECT COUNT(*) FROM interest WHERE user_id = ? AND property_id = ?";
+    $checkStmt = $conn->prepare($checkSql);
+    $checkStmt->bind_param("ii", $user_id, $property_id);
+    $checkStmt->execute();
+    $checkStmt->bind_result($count);
+    $checkStmt->fetch();
+    $checkStmt->close();
+
+    if ($count == 0) {
+        // Insert new interest record
+        $insertSql = "INSERT INTO interest (user_id, property_id, status, owner_id) VALUES (?, ?, ?, ?)";
+        $insertStmt = $conn->prepare($insertSql);
+        $insertStmt->bind_param("iisi", $user_id, $property_id, $status, $owner_id); // Use the property owner ID
+        $insertStmt->execute();
+        $insertStmt->close();
+        
+        // Use JavaScript to show an alert
+        echo "<script>alert('Interest expressed successfully!');</script>";
+    } else {
+        echo "<script>alert('You have already expressed interest in this property.');</script>";
+    }
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -53,338 +94,313 @@ $conn->close();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($title); ?> - Property Details</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="common.css">
-    
+
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             background-color: #f4f4f4;
             margin: 0;
-            padding: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            min-height: 100vh; /* Full height of the viewport */
         }
-
-
-
-
-
-/* Main Header Area */
-.main-header-area {
-    position: sticky;
-    top: 0;
-    width: 100%;
-    z-index: 100;
-    background-color: #333;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.classy-navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 30px;
-}
-
-.nav-brand img {
-    width: 150px;
-}
-
-.classy-navbar-toggler {
-    display: none;
-    cursor: pointer;
-}
-
-.classy-navbar-toggler .navbarToggler {
-    width: 30px;
-    height: 20px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
-.classy-navbar-toggler .navbarToggler span {
-    height: 3px;
-    background-color: #fff;
-}
-
-.classy-menu {
-    display: flex;
-    align-items: center;
-}
-
-.classy-menu .classycloseIcon {
-    display: none;
-}
-
-.classynav {
-    display: flex;
-    align-items: center;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-
-.classynav li {
-    margin-left: 20px;
-    display: inline-block;
-}
-
-.classynav li:first-child {
-    margin-left: 0;
-}
-
-.classynav li a {
-    text-transform: uppercase;
-    font-weight: 600;
-    color: #fff;
-    text-decoration: none;
-    padding: 10px 15px;
-    transition: color 0.3s, background-color 0.3s;
-    border-radius: 5px;
-}
-
-.classynav li a:hover {
-    background-color: #ff4a17;
-    color: #fff;
-}
-
-@media (max-width: 992px) {
-    .classy-navbar-toggler {
-        display: block;
-    }
-
-    .classy-menu {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        left: 0;
-        background-color: #333;
-        flex-direction: column;
-        align-items: flex-start;
-        display: none;
-        padding: 15px;
-    }
-
-    .classy-menu.active {
-        display: flex;
-    }
-
-    .classynav {
-        flex-direction: column;
-        width: 100%;
-    }
-
-    .classynav li {
-        width: 100%;
-        margin: 10px 0;
-    }
-
-    .classy-navbar-toggler .navbarToggler span {
-        background-color: #ff4a17;
-    }
-
-    .classycloseIcon {
-        display: block;
-        cursor: pointer;
-    }
-
-    .classycloseIcon .cross-wrap {
-        width: 25px;
-        height: 25px;
-        position: relative;
-    }
-
-    .classycloseIcon .cross-wrap span {
-        position: absolute;
-        top: 50%;
-        left: 0;
-        width: 100%;
-        height: 3px;
-        background-color: #fff;
-        transform: translateY(-50%);
-    }
-
-    .classycloseIcon .cross-wrap span.top {
-        transform: rotate(45deg);
-    }
-
-    .classycloseIcon .cross-wrap span.bottom {
-        transform: rotate(-45deg);
-    }
-}
-
 
         .properties-container {
-            background-color: #fff;
+            display: flex;
+            flex-direction: column; /* Stack children vertically */
+            justify-content: space-between; /* Space between top and bottom */
+            background-color: #ffffff;
             border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            padding: 30px;
-            max-width: 800px;
-            width: 100%;
-            margin: 5% auto;
-            box-sizing: border-box;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: transform 0.3s;
+            width: 90%; /* Responsive width */
+            max-width: 800px; /* Maximum width */
         }
 
-        .properties-container img {
-            width: 100%;
-            height: auto;
-            border-radius: 10px;
-            object-fit: cover;
-            margin-bottom: 20px;
+        .properties-container:hover {
+            transform: translateY(-5px);
         }
 
-        .properties-container h1 {
+        .main-image {
+            text-align: center; /* Center the main image */
+            margin-bottom: 20px; /* Space below the main image */
+        }
+
+        .main-image img {
+            max-width: 70%; /* Set max width to 70% for medium size */
+            height: auto; /* Maintain aspect ratio */
+            border-radius: 10px; /* Rounded corners */
+        }
+
+        .image-row {
+            display: flex;
+            flex-wrap: wrap; /* Allow images to wrap to the next line */
             margin-bottom: 20px;
-            font-size: 32px;
-            color: #333;
-            text-align: center;
+            padding: 10px 0;
+            justify-content: center; /* Center images */
+            overflow: hidden; /* Hide overflow to prevent scrollbar */
+        }
+
+        .image-row .thumbnail-image {
+            max-width: 100px; /* Set a smaller max width for thumbnails */
+            height: auto; /* Maintain aspect ratio */
+            margin: 5px; /* Add margin for spacing */
+            border-radius: 10px;
+            transition: transform 0.3s;
+            cursor: pointer; /* Change cursor to pointer */
+        }
+
+        .image-row .thumbnail-image:hover {
+            transform: scale(1.05);
         }
 
         .property-info {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
             margin-bottom: 20px;
+            text-align: center; /* Center text */
         }
 
         .property-info p {
+            margin: 5px 0;
             font-size: 18px;
-            color: #666;
-            flex: 1 1 45%;
-            margin: 10px 0;
+            color: #333;
         }
 
-        .description {
-            margin-top: 30px;
+        .property-info strong {
+            color: #007bff;
+        }
+
+        .interest-button {
+            margin-top: 20px;
+            text-align: center; /* Center button */
+        }
+
+        .interest-button .btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
             font-size: 16px;
-            color: #444;
-            line-height: 1.6;
         }
 
-        .description p {
+        .interest-button .btn:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+
+        .card {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            transition: box-shadow 0.3s;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-header {
+            background-color: #007bff;
+            color: white;
+            padding: 15px;
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+            font-size: 20px;
+        }
+
+        .card-body {
+            padding: 15px;
+        }
+
+        .card-body .row {
             margin: 0;
         }
 
-        /* Header styles */
-        .header-area {
-            width: 100%;
-            position: relative;
-            z-index: 10;
+        .card-body p {
+            margin: 5px 0;
+            font-size: 16px;
+            color: #555;
         }
 
-        .top-header-area {
-            background-color: black;
-            padding: 10px 0;
-            border-bottom: 1px solid #ddd;
+        /* Modal styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0, 0, 0, 0.8); /* Black w/ opacity */
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
         }
 
-        .top-header-area .email-address a,
-        .top-header-area .phone-number a {
-            color: #fff;
-            font-size: 14px;
-            text-decoration: none;
+        .modal-content {
+            max-width: 80%; /* Set max width for the image */
+            max-height: 80%; /* Set max height for the image */
+            margin: auto; /* Center the image */
+            display: block;
+            transition: transform 0.3s; /* Smooth transition */
         }
 
-        
-
-        
-
-       
+        #caption {
+            margin: auto;
+            text-align: center;
+            color: white; /* Caption text color */
+            padding: 10px;
+        }
     </style>
 </head>
 
 <body>
-    <!-- Preloader -->
-    <div id="preloader">
-        <div class="south-load"></div>
-    </div>
-    <header class="header-area">
-        <!-- Top Header Area -->
-        
-        
-        <!-- Main Header Area -->
-        <div class="main-header-area" id="stickyHeader">
-            <div class="classy-nav-container breakpoint-off">
-                <!-- Classy Menu -->
-                
-                    <a class="nav-brand" href="index.html">
 
-                    <!-- Navbar Toggler -->
-                    <div class="classy-navbar-toggler">
-                        <span class="navbarToggler"><span></span><span></span><span></span></span>
-                    </div>
 
-                    <!-- Menu -->
-                    <div class="classy-menu">
-                        <!-- close btn -->
-                        <div class="classycloseIcon">
-                            <div class="cross-wrap"><span class="top"></span><span class="bottom"></span></div>
-                        </div>
-
-                        <!-- Nav Start -->
-                        <div class="classynav">
-                            <ul>
-                                <li><a href="index1.php">Home</a></li>
-                                <li><a href="my_properties.php">My Properties</a></li>
-                                <li><a href="upload_property.php">Upload Property</a></li>
-                                <li><a href="search_properties.php">Search Properties</a></li>
-                                <li><a href="view_property.php">View Property</a></li>
-                                <li><a href="profile.php">My Profile</a></li>
-                                <li><a href="logout.php">Logout</a></li>
-                                <li><a href="contact.html">Contact</a></li>
-                            </ul>
-                            <!-- Nav End -->
-                        </div>
-                </nav>
-            </div>
-        </div>
-    </header>
-
+    
     <div class="properties-container">
-        <?php if ($photo): ?>
-            <img src="uploads/<?php echo htmlspecialchars($photo); ?>" alt="Property Image">
-        <?php else: ?>
-            <img src="default-property.png" alt="Default Property Image">
-        <?php endif; ?>
-        <div class="property-info">
+
+    <div class="property-info">
             <p><strong>Place:</strong> <?php echo htmlspecialchars($place); ?></p>
             <p><strong>District:</strong> <?php echo htmlspecialchars($district); ?></p>
             <p><strong>State:</strong> <?php echo htmlspecialchars($state); ?></p>
-            <p><strong>Size:</strong> <?php echo htmlspecialchars($size); ?> cent</p>
+            <p><strong>Size:</strong> 
+                <?php 
+                if ($property_type == 'plot') {
+                    echo htmlspecialchars($size) . ' cent'; // Display size in cent for plots
+                } 
+                else if ($property_type == 'house'){
+                    echo htmlspecialchars($size) . ' cent'; // Display size in sqft for houses
+                }
+                ?>
+            </p>
             <p><strong>Price:</strong> ₹<?php echo number_format(htmlspecialchars($price), 2); ?></p>
         </div>
-    </div>
+        <!-- Main Image Display -->
+        <div class="main-image">
+            <img id="mainImage" src="uploads/<?php echo htmlspecialchars(trim(explode(',', $photo)[0])); ?>" alt="Main Property Image" class="property-image">
+        </div>
+        
+        <div class="image-row">
+            <?php 
+            // Split the image string into an array
+            $images = explode(',', $photo); 
+            foreach ($images as $image): 
+            ?>
+                <a href="#" class="image-link" data-image="uploads/<?php echo htmlspecialchars(trim($image)); ?>">
+                    <img src="uploads/<?php echo htmlspecialchars(trim($image)); ?>" alt="Property Image" class="thumbnail-image">
+                </a>
+            <?php endforeach; ?>
+        </div>
+        
+        
 
-    <div class="container mt-5">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h2 class="mb-0">Author Details</h2>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4">
-                        <p><strong>Name:</strong></p>
-                        <p><strong>Email:</strong></p>
-                        <p><strong>Phone:</strong></p>
-                    </div>
-                    <div class="col-md-8">
-                        <p><?php echo htmlspecialchars($author_name); ?></p>
-                        <p><?php echo htmlspecialchars($author_email); ?></p>
-                        <p><?php echo htmlspecialchars($author_phone); ?></p>
+
+
+
+
+
+
+
+        <!-- Add Interest Button -->
+        <div class="interest-button">
+            <form action="#" method="POST">
+                <input type="hidden" name="user_id" value="<?php echo htmlspecialchars($current_user_id); ?>">
+                <input type="hidden" name="property_id" value="<?php echo htmlspecialchars($property_id); ?>">
+                <input type="hidden" name="owner_id" value="<?php echo htmlspecialchars($author_id); ?>">
+                <?php if ($user_id !== $current_user_id): // Check if author ID is different from current user ID ?>
+                    <button type="submit" name="intrestBtn" class="btn btn-primary">Express Interest</button>
+                <?php endif; ?>
+            </form>
+        </div>
+        <div class="container mt-5">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0">Author Details</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p><strong>Name:</strong></p>
+                            <p><strong>Email:</strong></p>
+                            <p><strong>Phone:</strong></p>
+                        </div>
+                        <div class="col-md-8">
+                            <p><?php echo htmlspecialchars($author_name); ?></p>
+                            <p><?php echo htmlspecialchars($author_email); ?></p>
+                            <p><?php echo htmlspecialchars($author_phone); ?></p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</body>
-<script src="js/jquery/jquery-2.2.4.min.js"></script>
-<script src="js/popper.min.js"></script>
-<script src="js/bootstrap.min.js"></script>
-<script src="js/plugins.js"></script>
-<script src="js/classy-nav.min.js"></script>
-<script src="js/jquery-ui.min.js"></script>
-<script src="js/active.js"></script>
 
+    <!-- Modal for Enlarged Image -->
+    <div id="imageModal" class="modal">
+        <span class="close">&times;</span>
+        <img class="modal-content" id="modalImage">
+        <div id="caption"></div>
+    </div>
+
+    <script src="js/jquery/jquery-2.2.4.min.js"></script>
+    <script src="js/popper.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/plugins.js"></script>
+    <script src="js/classy-nav.min.js"></script>
+    <script src="js/jquery-ui.min.js"></script>
+    <script src="js/active.js"></script>
+    <script>
+        // Get the modal
+        var modal = document.getElementById("imageModal");
+        var modalImg = document.getElementById("modalImage");
+        var captionText = document.getElementById("caption");
+        var mainImage = document.getElementById("mainImage");
+
+        // Get all thumbnail images
+        var thumbnails = document.getElementsByClassName("thumbnail-image");
+        
+        // Loop through the thumbnails and add click event
+        for (var i = 0; i < thumbnails.length; i++) {
+            thumbnails[i].onclick = function(){
+                mainImage.src = this.src; // Change the main image to the clicked thumbnail
+                modal.style.display = "flex"; // Show modal
+                modalImg.src = this.src; // Set modal image to the clicked thumbnail
+                captionText.innerHTML = this.alt; // Set caption
+            }
+        }
+
+        // Get the <span> element that closes the modal
+        var span = document.getElementsByClassName("close")[0];
+
+        // When the user clicks on <span> (x), close the modal
+        span.onclick = function() { 
+            modal.style.display = "none";
+        }
+
+        // Close the modal when clicking outside of the modal content
+        modal.onclick = function(event) {
+            if (event.target === modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        // Close the modal when the Escape key is pressed
+        document.onkeydown = function(event) {
+            if (event.key === "Escape") {
+                modal.style.display = "none";
+            }
+        }
+    </script>
+</body>
 </html>

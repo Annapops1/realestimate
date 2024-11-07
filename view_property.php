@@ -190,17 +190,23 @@ $conn->close();
         <?php if ($result && $result->num_rows > 0): ?>
             <?php while ($row = $result->fetch_assoc()): ?>
                 <div class="property-item">
-                    <?php if ($row['photo']): ?>
-                        <img src="uploads/<?php echo htmlspecialchars($row['photo']); ?>" alt="Property Image">
-                    <?php else: ?>
-                        <img src="default-property.png" alt="Default Property Image">
-                    <?php endif; ?>
+                    <?php 
+                    // Assuming 'photo' contains the image filenames separated by commas
+                    $imageArray = explode(',', $row['photo']); // Split the filenames into an array
+                    $image = !empty($imageArray[0]) ? htmlspecialchars(urlencode($imageArray[0])) : 'default-property.png'; 
+                    
+                    // Check if the image file exists
+                    $imagePath = 'uploads/' . $image;
+                    if (!file_exists($imagePath)) {
+                        $image = 'default-property.png'; // Fallback to default image if not found
+                    }
+                    ?>
+                    <img src="<?php echo $imagePath; ?>" alt="Property Image">
                     <div>
                         <h2><?php echo htmlspecialchars($row['title']); ?></h2>
                         <p><strong>Place:</strong> <?php echo htmlspecialchars($row['place']); ?></p>
                         <p><strong>District:</strong> <?php echo htmlspecialchars($row['district']); ?></p>
                         <p><strong>State:</strong> <?php echo htmlspecialchars($row['state']); ?></p>
-                        <p><strong>Size:</strong> <?php echo htmlspecialchars($row['size']); ?> cent</p>
                         <a href="property_details.php?property_id=<?php echo $row['property_id']; ?>">View Details</a>
                     </div>
                 </div>
