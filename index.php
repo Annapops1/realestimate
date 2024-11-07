@@ -27,16 +27,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         header("Location: admin_dash.php"); // Redirecting to index.html as your template
         exit();
     } else {
-        $sql = "SELECT user_id, username, password FROM users WHERE username = ?";
+        $sql = "SELECT user_id, username, password, is_active FROM users WHERE username = ?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("s", $username);
         $stmt->execute();
         $stmt->store_result();
 
         if ($stmt->num_rows > 0) {
-            $stmt->bind_result($user_id, $username, $hashed_password);
+            $stmt->bind_result($user_id, $username, $hashed_password, $is_active);
             $stmt->fetch();
-            if (password_verify($password, $hashed_password)) {
+            if ($is_active == 0) {
+                $message = "Your account is deactivated. Please contact support.";
+            } elseif (password_verify($password, $hashed_password)) {
                 // Secure the session by regenerating the session ID
                 session_regenerate_id(true);
                 $_SESSION['user_id'] = $user_id;
@@ -186,7 +188,7 @@ $conn->close();
                 <label for="password">Password:</label>
                 <input type="password" id="password" name="password" required>
             </div>
-            <button type="submit" class="btn">Login</button>
+            <input type="submit" value="Login" class="btn">
         </form>
         <div class="form-footer">
             <p>Don't have an account? <a href="register.php">Register here</a></p>

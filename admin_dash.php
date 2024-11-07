@@ -158,7 +158,18 @@ error_reporting(E_ERROR | E_PARSE);
                     $stmt_delete->bind_param("i", $delete_user_id);
                     $stmt_delete->execute();
                     $stmt_delete->close();
-                } ?>
+                }
+
+                // Handle user activation/deactivation
+                if (isset($_GET['toggle_user_id'])) {
+                    $toggle_user_id = $_GET['toggle_user_id'];
+                    $sql_toggle = "UPDATE users SET is_active = NOT is_active WHERE user_id = ?";
+                    $stmt_toggle = $conn->prepare($sql_toggle);
+                    $stmt_toggle->bind_param("i", $toggle_user_id);
+                    $stmt_toggle->execute();
+                    $stmt_toggle->close();
+                }
+                ?>
                 <script>
                     $(document).ready(function() {
                         $('.content-section').hide();
@@ -169,67 +180,73 @@ error_reporting(E_ERROR | E_PARSE);
 
                 // Display active users
                 $sql = "SELECT * FROM users";
-$result = $conn->query($sql);
-$i = 0;
-if ($result->num_rows > 0) {
-    echo "<table><tr><th>Sl no:</th><th>Username</th><th>Email</th><th>Phone</th><th>Address</th><th>Profile</th><th>Status</th></tr>";
-    while ($row = $result->fetch_assoc()) {
-        $i = $i + 1;
-        $status = $row["is_active"] ? "Active" : "Inactive";
-        echo "<tr>
-            <td>" . $i . "</td>
-            <td>" . $row["username"] . "</td>
-            <td>" . $row["email"] . "</td>
-            <td>" . $row["phone"] . "</td>
-            <td>" . $row["address"] . "</td>
-            <td><img width='100' height='100' src='./uploads/" . $row["photo"] . "'></td>
-            <td>" . $status . "</td>
-        </tr>";
-    }
-    echo "</table>";
-} else {
-    echo "No users found.";
-}
+                $result = $conn->query($sql);
+                $i = 0;
+                if ($result->num_rows > 0) {
+                    echo "<table><tr><th>Sl no:</th><th>Username</th><th>Email</th><th>Phone</th><th>Address</th><th>Profile</th><th>Status</th><th>Action</th></tr>";
+                    while ($row = $result->fetch_assoc()) {
+                        $i = $i + 1;
+                        $status = $row["is_active"] ? "Active" : "Inactive";
+                        echo "<tr>
+                            <td>" . $i . "</td>
+                            <td>" . $row["username"] . "</td>
+                            <td>" . $row["email"] . "</td>
+                            <td>" . $row["phone"] . "</td>
+                            <td>" . $row["address"] . "</td>
+                            <td><img width='100' height='100' src='./uploads/" . $row["photo"] . "'></td>
+                            <td>" . $status . "</td>
+                            <td>
+                                <a href='?toggle_user_id=" . $row["user_id"] . "'>" . ($row["is_active"] ? "Deactivate" : "Activate") . "</a>
+                            </td>
+                        </tr>";
+                    }
+                    echo "</table>";
+                } else {
+                    echo "No users found.";
+                }
 
                 $conn->close();
                 ?>
             </div>
             <div id="properties" class="content-section" style="display:none;">
-    <h1>Manage Properties</h1>
-    <?php
-    $conn = new mysqli('127.0.0.1', 'root', '', 'miniproj');
-    if ($conn->connect_error) {
-        die("Connection failed: " . $conn->connect_error);
-    }
+                <h1>Manage Properties</h1>
+                <?php
+                $conn = new mysqli('127.0.0.1', 'root', '', 'miniproj');
+                if ($conn->connect_error) {
+                    die("Connection failed: " . $conn->connect_error);
+                }
 
-    // Handle property deletion
-    if (isset($_GET['delete_property_id'])) {
-        $delete_property_id = $_GET['delete_property_id'];
-        $sql_delete = "DELETE FROM properties WHERE property_id = ?";
-        $stmt_delete = $conn->prepare($sql_delete);
-        $stmt_delete->bind_param("i", $delete_property_id);
-        $stmt_delete->execute();
-        $stmt_delete->close();
-    }
+                // Handle property deletion
+                if (isset($_GET['delete_property_id'])) {
+                    $delete_property_id = $_GET['delete_property_id'];
+                    $sql_delete = "DELETE FROM properties WHERE property_id = ?";
+                    $stmt_delete = $conn->prepare($sql_delete);
+                    $stmt_delete->bind_param("i", $delete_property_id);
+                    $stmt_delete->execute();
+                    $stmt_delete->close();
+                }
 
-    $sql = "SELECT * FROM properties";
-    $result = $conn->query($sql);
-    if ($result->num_rows > 0) {
-        echo "<table><tr><th>City</th><th>State</th><th>Size(in cent)</th><th>Image</th><th>Action</th></tr>";
-        while ($row = $result->fetch_assoc()) {
-            echo "<tr><td>"  . $row["place"] . "</td><td>" . $row["state"] . "</td><td>" . $row["size"] . "</td><td><img src='./uploads/" . $row["photo"] . "' width='100'></td>
-            <td>
-                <a href='property_details.php?property_id=" . $row["property_id"] . "'>View</a>
-            </td></tr>";
-        }
-        echo "</table>";
-    } else {
-        echo "No properties found.";
-    }
+                $sql = "SELECT * FROM properties";
+                $result = $conn->query($sql);
+                if ($result->num_rows > 0) {
+                    echo "<table><tr><th>City</th><th>State</th><th>Size(in cent)</th><th>Image</th><th>Action</th></tr>";
+                    while ($row = $result->fetch_assoc()) {
+                        // Take only the first image from the list
+                        $images = explode(',', $row["photo"]); // Assuming photos are stored as comma-separated values
+                        $first_image = trim($images[0]); // Get the first image and trim any whitespace
+                        echo "<tr><td>"  . $row["place"] . "</td><td>" . $row["state"] . "</td><td>" . $row["size"] . "</td><td><img src='./uploads/" . $first_image . "' width='100'></td>
+                        <td>
+                            <a href='property_details.php?property_id=" . $row["property_id"] . "'>View</a>
+                        </td></tr>";
+                    }
+                    echo "</table>";
+                } else {
+                    echo "No properties found.";
+                }
 
-    $conn->close();
-    ?>
-</div>
+                $conn->close();
+                ?>
+            </div>
 
             <div id="inquiries" class="content-section" style="display:none;">
                 <h1>Manage Inquiries</h1>

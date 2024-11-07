@@ -20,22 +20,18 @@ if ($conn->connect_error) {
 }
 
 // Fetch property details
-$sql = "SELECT place, district, state, size,size_sqft,  price, photo, user_id, property_type FROM properties WHERE property_id = ?";
+$sql = "SELECT place, district, state, size, size_sqft, price, photo, user_id, property_type FROM properties WHERE property_id = ?";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     die("Prepare failed: " . $conn->error);
 }
 $stmt->bind_param("i", $property_id);
 $stmt->execute();
-$stmt->bind_result($place, $district, $state, $size,$size_sqft,  $price, $photo, $user_id, $property_type);
+$stmt->bind_result($place, $district, $state, $size, $size_sqft, $price, $photo, $user_id, $property_type);
 $stmt->fetch();
 $stmt->close();
 
-// Store property user ID
-$author_id = $user_id; // Store the user ID of the property owner
-
 // Fetch author details
-
 $user_id = isset($user_id) ? $user_id : 0; // Ensure user_id is set
 if ($user_id <= 0) {
     die("Invalid user ID.");
@@ -59,7 +55,6 @@ $stmt->close();
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['intrestBtn'])) {
     $user_id = $_POST['user_id'];
     $property_id = $_POST['property_id'];
-    $owner_id = $_POST['owner_id'];
     $status = 'interested'; // or whatever status you want to set
 
     // Check if the interest already exists
@@ -73,9 +68,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['intrestBtn'])) {
 
     if ($count == 0) {
         // Insert new interest record
-        $insertSql = "INSERT INTO interest (user_id, property_id, status, owner_id) VALUES (?, ?, ?, ?)";
+        $insertSql = "INSERT INTO interest (user_id, property_id, status) VALUES (?, ?, ?)";
         $insertStmt = $conn->prepare($insertSql);
-        $insertStmt->bind_param("iisi", $user_id, $property_id, $status, $owner_id); // Use the property owner ID
+        $insertStmt->bind_param("iis", $user_id, $property_id, $status);
         $insertStmt->execute();
         $insertStmt->close();
         
@@ -241,18 +236,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['intrestBtn'])) {
             top: 0;
             width: 100%; /* Full width */
             height: 100%; /* Full height */
-            overflow: auto; /* Enable scroll if needed */
-            background-color: rgba(0, 0, 0, 0.8); /* Black w/ opacity */
+            overflow: hidden; /* Enable scroll if needed */
+            background-color: rgba(0, 0, 0, 0.9); /* Darker background for better contrast */
             justify-content: center; /* Center horizontally */
             align-items: center; /* Center vertically */
+            transition: opacity 0.3s ease; /* Smooth transition for opening */
         }
 
-        .modal-content {
-            max-width: 80%; /* Set max width for the image */
-            max-height: 80%; /* Set max height for the image */
-            margin: auto; /* Center the image */
-            display: block;
-            transition: transform 0.3s; /* Smooth transition */
+        .carousel {
+            position: relative;
+            max-width: 50%; /* Set max width for the carousel */
+            margin: auto;
+            border-radius: 10px; /* Rounded corners for the carousel */
+            overflow: hidden; /* Hide overflow */
+        }
+
+        .mySlides {
+            display: none; /* Hide all images by default */
+            width: 100%; /* Full width */
+            border-radius: 10px; /* Rounded corners */
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); /* Shadow for depth */
+            animation: fadeIn 0.5s; /* Fade-in animation */
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .prev, .next {
+            cursor: pointer;
+            position: absolute;
+            top: 50%;
+            width: auto;
+            padding: 16px;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            transition: background-color 0.3s ease;
+            border-radius: 50%; /* Circular buttons */
+            user-select: none;
+            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+        }
+
+        .prev:hover, .next:hover {
+            background-color: rgba(0, 0, 0, 0.8); /* Darker on hover */
+        }
+
+        .prev {
+            left: 10px; /* Position left */
+        }
+
+        .next {
+            right: 10px; /* Position right */
+        }
+
+        .close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: #ff0000; /* Change color on hover */
         }
 
         #caption {
@@ -265,24 +316,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['intrestBtn'])) {
 </head>
 
 <body>
-
-
-    
     <div class="properties-container">
 
     <div class="property-info">
             <p><strong>Place:</strong> <?php echo htmlspecialchars($place); ?></p>
             <p><strong>District:</strong> <?php echo htmlspecialchars($district); ?></p>
             <p><strong>State:</strong> <?php echo htmlspecialchars($state); ?></p>
-            <p><strong>Size:</strong> 
-                <?php 
-                if ($property_type == 'plot') {
-                    echo htmlspecialchars($size) . ' cent'; // Display size in cent for plots
-                } 
-                else if ($property_type == 'house'){
-                    echo htmlspecialchars($size) . ' cent'; // Display size in sqft for houses
-                }
-                ?>
+            <p><strong>Size:</strong> <?php echo htmlspecialchars($size) . ' cent';?></strong> 
+                
             </p>
             <p><strong>Price:</strong> ₹<?php echo number_format(htmlspecialchars($price), 2); ?></p>
         </div>
@@ -304,20 +345,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['intrestBtn'])) {
         </div>
         
         
-
-
-
-
-
-
-
-
         <!-- Add Interest Button -->
         <div class="interest-button">
             <form action="#" method="POST">
                 <input type="hidden" name="user_id" value="<?php echo htmlspecialchars($current_user_id); ?>">
                 <input type="hidden" name="property_id" value="<?php echo htmlspecialchars($property_id); ?>">
-                <input type="hidden" name="owner_id" value="<?php echo htmlspecialchars($author_id); ?>">
                 <?php if ($user_id !== $current_user_id): // Check if author ID is different from current user ID ?>
                     <button type="submit" name="intrestBtn" class="btn btn-primary">Express Interest</button>
                 <?php endif; ?>

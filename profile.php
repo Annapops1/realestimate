@@ -2,7 +2,8 @@
 session_start();
 
 // Enable error reporting
-error_reporting(E_ALL);
+error_reporting(E_ERROR | E_NOTICE);
+
 ini_set('display_errors', 1);
 
 // Check if user is logged in
@@ -32,8 +33,22 @@ $stmt->execute();
 $stmt->bind_result($username, $email, $phone, $address, $photo);
 $stmt->fetch();
 $stmt->close();
-$conn->close();
+
+// Fetch user interests
+$interests_sql = "SELECT id, user_id,owner_id, property_id, status FROM interest";
+$interests_stmt = $conn->prepare($interests_sql);
+if (!$interests_stmt) {
+    die("Prepare failed: " . $conn->error);
+}
+$interests_stmt->execute();
+$interests_result = $interests_stmt->get_result();
+$interests = $interests_result->fetch_all(MYSQLI_ASSOC);
+$interests_stmt->close();
+
+
+// Close the connection after all queries
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -296,6 +311,14 @@ unset($_SESSION['payment_failure']); // Clear the message after retrieving it
         </div>
 
         <a href="edit_profile.php">Edit Profile</a>
+        
+        <!-- Add Account Deletion Option -->
+        <form action="delete_account.php" method="POST" style="margin-top: 20px;" onsubmit="return confirmDelete();">
+            <button type="submit" style="background-color: #d9534f; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                Delete Account
+            </button>
+        </form>
+        
         <form action="" method="POST">
 <script
     src="https://checkout.razorpay.com/v1/checkout.js"
@@ -316,6 +339,88 @@ unset($_SESSION['payment_failure']); // Clear the message after retrieving it
 </form>
     </div>
     </center>
+
+    <div class="interests-container"style="margin-bottom: 10px">
+        <h2>Interests</h2>
+        
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th style="border: 1px solid #ddd; padding: 8px;">Full Name</th>
+                        <th style="border: 1px solid #ddd; padding: 8px;">Email</th>
+                        <th style="border: 1px solid #ddd; padding: 8px;">Phone</th>
+                        <th style="border: 1px solid #ddd; padding: 8px;">Property Title</th>
+                        <th style="border: 1px solid #ddd; padding: 8px;">Image</th>
+                        <th style="border: 1px solid #ddd; padding: 8px;">Action</th> <!-- New column for actions -->
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    foreach ($interests as $interest): ?>
+                    <?php 
+        
+        if ($user_id == $interest['owner_id']): ?>
+                        <?php
+                        // Fetch user details based on user_id from the interest
+                        $userDetailsSql = "SELECT username, email, phone, address, fullname, photo FROM users WHERE user_id = ?";
+                        $userDetailsStmt = $conn->prepare($userDetailsSql);
+                        
+                        // Check if prepare was successful
+                        if (!$userDetailsStmt) {
+                            die("Prepare failed: " . $conn->error);
+                        }
+
+                        $userDetailsStmt->bind_param("i", $interest['user_id']);
+                        $userDetailsStmt->execute();
+                        $userDetailsStmt->bind_result($interestUsername, $interestEmail, $interestPhone, $interestAddress, $interestFullname, $interestPhoto);
+                        $userDetailsStmt->fetch();
+                        $userDetailsStmt->close();
+
+                        // Fetch property details based on property_id from the interest
+                        $propertyDetailsSql = "SELECT state, photo FROM properties WHERE property_id = ?";
+                        $propertyDetailsStmt = $conn->prepare($propertyDetailsSql);
+                        
+                        // Check if prepare was successful
+                        if (!$propertyDetailsStmt) {
+                            die("Prepare failed: " . $conn->error);
+                        }
+
+                        $propertyDetailsStmt->bind_param("i", $interest['property_id']);
+                        $propertyDetailsStmt->execute();
+                        $propertyDetailsStmt->bind_result($propertyTitle, $propertyImage);
+                        $propertyDetailsStmt->fetch();
+                        $propertyDetailsStmt->close();
+                        ?>
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 8px;"><?php echo htmlspecialchars($interestFullname); ?></td>
+                            <td style="border: 1px solid #ddd; padding: 8px;"><?php echo htmlspecialchars($interestEmail); ?></td>
+                            <td style="border: 1px solid #ddd; padding: 8px;"><?php echo htmlspecialchars($interestPhone); ?></td>
+                            <td style="border: 1px solid #ddd; padding: 8px;"><?php echo htmlspecialchars($propertyTitle); ?></td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">
+                                <?php 
+                                // Assuming $propertyImage contains multiple images as a comma-separated string
+                                $images = explode(',', $propertyImage); // Split the string into an array
+                                $firstImage = trim($images[0]); // Get the first image and trim any whitespace
+                                ?>
+                                <?php if (!empty($firstImage)): ?>
+                                    <img src="./uploads/<?php echo htmlspecialchars($firstImage); ?>" alt="Property Image" style="max-width:100px; max-height:70px; width:auto; height:auto; border-radius:10px;">
+                                <?php else: ?>
+                                    <p>No image available</p>
+                                <?php endif; ?>
+                            </td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">
+                                <a href="property_details.php?property_id=<?php echo htmlspecialchars($interest['property_id']); ?>" style="color: #0066cc; text-decoration: none;">View Property</a>
+                            </td> <!-- New action link -->
+                        </tr>
+                        <?php else: ?>
+            <p>No interests found.</p>
+        <?php endif; ?>
+                        <?php endforeach; ?>
+                </tbody>
+            </table>
+        
+    </div>
+
 </body>
 <script src="js/jquery/jquery-2.2.4.min.js"></script>
 <script src="js/popper.min.js"></script>
@@ -324,5 +429,11 @@ unset($_SESSION['payment_failure']); // Clear the message after retrieving it
 <script src="js/classy-nav.min.js"></script>
 <script src="js/jquery-ui.min.js"></script>
 <script src="js/active.js"></script>
+
+<script>
+    function confirmDelete() {
+        return confirm("Are you sure you want to delete your account? This action is irreversible.");
+    }
+</script>
 
 </html>

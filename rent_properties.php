@@ -3,7 +3,7 @@ session_start();
 error_reporting(E_ERROR | E_PARSE);
 
 // Connect to the database
-$conn = new mysqli('127.0.0.1', 'root', '', 'miniproj'); // Ensure the database name matches
+$conn = new mysqli('127.0.0.1', 'root', '', 'miniproj');
 
 // Check connection
 if ($conn->connect_error) {
@@ -330,12 +330,23 @@ $conn->close();
             <?php if (count($properties) > 0): ?>
                 <?php foreach ($properties as $property): ?>
                     <div class="property-card">
-                        <img src="uploads/<?php echo $property['photo']; ?>" alt="Property Image">
+                        <?php 
+                        // Assuming 'photo' contains the image filenames separated by commas
+                        $imageArray = explode(',', $property['photo']); // Split the filenames into an array
+                        $image = !empty($imageArray[0]) ? htmlspecialchars(urlencode($imageArray[0])) : 'default-property.png'; 
+                        
+                        // Check if the image file exists
+                        $imagePath = 'uploads/' . $image;
+                        if (!file_exists($imagePath)) {
+                            $image = 'default-property.png'; // Fallback to default image if not found
+                        }
+                        ?>
+                        <img src="<?php echo $imagePath; ?>" alt="Property Image" style="width: 100%; height: 200px; object-fit: cover;">
                         <div class="property-info">
-                            <h3><?php echo $property['title']; ?></h3>
-                            <p><?php echo $property['description']; ?></p>
-                            <p class="price">$<?php echo $property['price']; ?></p>
-                            <a href="property_details.php?property_id=<?php echo $property['property_id']; ?>" class="view-details">View Details</a>
+                            <h3><?php echo htmlspecialchars($property['title']); ?></h3>
+                            <p><?php echo htmlspecialchars($property['description']); ?></p>
+                            <p class="price">₹<?php echo htmlspecialchars($property['price']); ?></p>
+                            <a href="property_details.php?property_id=<?php echo htmlspecialchars($property['property_id']); ?>" class="view-details">View Details</a>
                         </div>
                     </div>
                 <?php endforeach; ?>
