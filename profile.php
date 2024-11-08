@@ -413,7 +413,7 @@ unset($_SESSION['payment_failure']); // Clear the message after retrieving it
                             </td> <!-- New action link -->
                         </tr>
                         <?php else: ?>
-            <p>No interests found.</p>
+            <!-- <p>No interests found.</p> -->
         <?php endif; ?>
                         <?php endforeach; ?>
                 </tbody>
